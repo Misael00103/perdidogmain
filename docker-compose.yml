@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  perdidog-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: perdidog-app
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - perdidog-network
+
+networks:
+  perdidog-network:
+    driver: bridge

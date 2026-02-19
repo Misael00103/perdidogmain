@@ -1,11 +1,24 @@
 {
-  "name": "react-project",
+  "name": "perdidog",
   "version": "1.0.0",
   "type": "module",
+  "description": "Plataforma para reportar, buscar y encontrar mascotas perdidas",
+  "author": "Perdidog Team",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "docker:build": "docker build -t perdidog-app .",
+    "docker:run": "docker run -d -p 80:80 --name perdidog perdidog-app",
+    "docker:stop": "docker stop perdidog && docker rm perdidog",
+    "docker:logs": "docker logs -f perdidog",
+    "compose:up": "docker-compose up -d",
+    "compose:down": "docker-compose down",
+    "compose:logs": "docker-compose logs -f",
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod --dir=dist"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
@@ -14,7 +27,7 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
-    "axios": "^1.13.5",
+    "axios": "^1.6.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",
