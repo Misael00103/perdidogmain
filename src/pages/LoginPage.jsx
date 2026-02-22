@@ -55,7 +55,11 @@ const LoginPage = () => {
         <Card className="login-card border-0 shadow-2xl rounded-2xl overflow-hidden animate-fade-in">
           <CardHeader className="text-center pt-8 pb-4">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#015388] to-[#16A99F] flex items-center justify-center mb-4 animate-pulse-slow">
-              <Dog className="w-8 h-8 text-white" />
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-12 h-12 object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold text-[#015388]">Perdidog Admin</h1>
             <p className="text-gray-500 text-sm mt-1">Panel de Administración</p>

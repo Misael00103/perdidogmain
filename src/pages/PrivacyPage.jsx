@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dog } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const PrivacyPage = () => {
@@ -13,16 +13,29 @@ const PrivacyPage = () => {
             Volver al inicio
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <Dog className="w-10 h-10 text-[#16A99F]" />
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-8 h-8 object-contain"
+              />
+            </div>
             <span className="text-2xl font-bold">Perdidog</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold">Política de Privacidad</h1>
-          <p className="text-white/70 mt-2">Última actualización: Enero 2024</p>
+          <p className="text-white/70 mt-2">Última actualización: Febrero 2024</p>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
+          <p className="text-blue-800">
+            <strong>Tu privacidad es importante:</strong> En Perdidog nos comprometemos a proteger tu información personal 
+            y ser transparentes sobre cómo la utilizamos.
+          </p>
+        </div>
+
         <div className="legal-content prose prose-lg max-w-none text-gray-700">
           <h2 className="text-2xl font-bold text-[#015388]">1. Información que Recopilamos</h2>
           <p>
@@ -101,8 +114,8 @@ const PrivacyPage = () => {
           </p>
           <ul className="list-none pl-0">
             <li><strong>Email:</strong> privacidad@perdidog.com</li>
-            <li><strong>Teléfono:</strong> +1 (555) 123-4567</li>
-            <li><strong>Dirección:</strong> Ciudad de México, México</li>
+            <li><strong>Teléfono:</strong> +1 (849) 250-1084</li>
+            <li><strong>Dirección:</strong> República Dominicana</li>
           </ul>
         </div>
       </main>

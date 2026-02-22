@@ -477,7 +477,11 @@ const DashboardPage = () => {
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-5 border-b">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#015388] to-[#16A99F] flex items-center justify-center">
-              <Dog className="w-6 h-6 text-white" />
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <span className="text-xl font-bold text-[#015388]">Perdidog</span>
           </div>
@@ -734,7 +738,11 @@ const DashboardPage = () => {
               ) : activeTab === "reports" ? (
                 filteredReports.length === 0 ? (
                   <div className="text-center py-12">
-                    <Dog className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <img 
+                      src="/src/images/perdidog5-removebg-preview.png" 
+                      alt="No hay reportes" 
+                      className="w-12 h-12 mx-auto mb-4 opacity-30 object-contain"
+                    />
                     <p className="text-gray-500">No se encontraron reportes</p>
                   </div>
                 ) : (
@@ -759,7 +767,11 @@ const DashboardPage = () => {
                                   {report.image_url ? (
                                     <img src={report.image_url} alt="" className="w-full h-full object-cover" />
                                   ) : (
-                                    <Dog className="w-5 h-5 text-gray-400" />
+                                    <img 
+                                      src="/src/images/perdidog5-removebg-preview.png" 
+                                      alt="Mascota" 
+                                      className="w-6 h-6 object-contain opacity-40"
+                                    />
                                   )}
                                 </div>
                                 <div>

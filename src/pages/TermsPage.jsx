@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dog } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const TermsPage = () => {
@@ -13,16 +13,29 @@ const TermsPage = () => {
             Volver al inicio
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <Dog className="w-10 h-10 text-[#16A99F]" />
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-8 h-8 object-contain"
+              />
+            </div>
             <span className="text-2xl font-bold">Perdidog</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold">Términos y Condiciones</h1>
-          <p className="text-white/70 mt-2">Última actualización: Enero 2024</p>
+          <p className="text-white/70 mt-2">Última actualización: Febrero 2024</p>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
+          <p className="text-blue-800">
+            <strong>Importante:</strong> Al utilizar Perdidog, aceptas estos términos en su totalidad. 
+            Te recomendamos leerlos cuidadosamente antes de usar nuestros servicios.
+          </p>
+        </div>
+
         <div className="legal-content prose prose-lg max-w-none text-gray-700">
           <h2 className="text-2xl font-bold text-[#015388]">1. Aceptación de los Términos</h2>
           <p>
@@ -86,19 +99,28 @@ const TermsPage = () => {
           <p>
             Podemos suspender o terminar su acceso a la Aplicación en cualquier momento, sin previo aviso, por violación de estos términos o por cualquier otra razón a nuestra discreción.
           </p>
+          <p>
+            Usted puede cerrar su cuenta en cualquier momento desde la configuración de la aplicación. Al cerrar su cuenta, sus datos personales serán eliminados de acuerdo con nuestra Política de Privacidad.
+          </p>
 
           <h2 className="text-2xl font-bold text-[#015388]">10. Ley Aplicable</h2>
           <p>
-            Estos Términos se regirán e interpretarán de acuerdo con las leyes de México, sin dar efecto a ningún principio de conflicto de leyes.
+            Estos Términos se regirán e interpretarán de acuerdo con las leyes de la República Dominicana, sin dar efecto a ningún principio de conflicto de leyes.
           </p>
 
-          <h2 className="text-2xl font-bold text-[#015388]">11. Contacto</h2>
+          <h2 className="text-2xl font-bold text-[#015388]">11. Resolución de Disputas</h2>
+          <p>
+            Cualquier disputa relacionada con estos términos será resuelta mediante arbitraje vinculante de acuerdo con las reglas de arbitraje de la República Dominicana. El arbitraje se llevará a cabo en Santo Domingo.
+          </p>
+
+          <h2 className="text-2xl font-bold text-[#015388]">12. Contacto</h2>
           <p>
             Si tiene preguntas sobre estos Términos y Condiciones, puede contactarnos en:
           </p>
           <ul className="list-none pl-0">
-            <li><strong>Email:</strong> legal@perdidog.com</li>
-            <li><strong>Teléfono:</strong> +1 (555) 123-4567</li>
+            <li><strong>Email:</strong> perdidogcontacto@gmail.com</li>
+            <li><strong>Teléfono:</strong> +1 (849) 250-1084</li>
+            <li><strong>Dirección:</strong> República Dominicana</li>
           </ul>
         </div>
       </main>

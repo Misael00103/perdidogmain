@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dog, Home, FileText, Shield, AlertTriangle, Map } from "lucide-react";
+import { ArrowLeft, Home, FileText, Shield, Map } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const SitemapPage = () => {
@@ -48,7 +48,13 @@ const SitemapPage = () => {
             Volver al inicio
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <Dog className="w-10 h-10 text-[#16A99F]" />
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-8 h-8 object-contain"
+              />
+            </div>
             <span className="text-2xl font-bold">Perdidog</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold">Mapa del Sitio</h1>

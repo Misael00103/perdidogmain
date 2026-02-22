@@ -218,7 +218,11 @@ const LandingPage = () => {
                     <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 space-y-3 animate-fade-in-up">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-[#16A99F] flex items-center justify-center animate-pulse-slow">
-                          <Dog className="w-6 h-6 text-white" />
+                          <img 
+                            src="/src/images/perdidog5-removebg-preview.png" 
+                            alt="Perdidog" 
+                            className="w-8 h-8 object-contain"
+                          />
                         </div>
                         <div>
                           <p className="text-white font-semibold">Max encontrado</p>
@@ -369,7 +373,11 @@ const LandingPage = () => {
       {/* CTA Section */}
       <section id="download" className="py-20 md:py-28 relative" style={{ background: 'linear-gradient(135deg, #015388 0%, #016dad 50%, #16A99F 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-          <Dog className="w-16 h-16 mx-auto mb-6 text-[#16A99F] animate-pulse-slow scroll-animate-scale" />
+          <img 
+            src="/src/images/perdidog5-removebg-preview.png" 
+            alt="Perdidog Logo" 
+            className="w-16 h-16 mx-auto mb-6 animate-pulse-slow scroll-animate-scale object-contain"
+          />
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 scroll-animate">
             Descarga Perdidog hoy y únete a nuestra comunidad
           </h2>

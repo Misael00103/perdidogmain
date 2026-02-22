@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dog, Shield, AlertTriangle, CheckCircle, Users, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Shield, AlertTriangle, CheckCircle, Users, Phone, Mail } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const SafetyReportPage = () => {
@@ -45,7 +45,13 @@ const SafetyReportPage = () => {
             Volver al inicio
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <Dog className="w-10 h-10 text-[#16A99F]" />
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-8 h-8 object-contain"
+              />
+            </div>
             <span className="text-2xl font-bold">Perdidog</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold">Safety Report</h1>
@@ -179,7 +185,7 @@ const SafetyReportPage = () => {
               </div>
               <div>
                 <div className="text-sm text-white/70">Línea de Emergencias</div>
-                <div className="font-semibold">+1 (555) 911-PETS</div>
+                <div className="font-semibold">+1 (849) 250-1084</div>
               </div>
             </div>
           </div>

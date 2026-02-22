@@ -25,8 +25,12 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" data-testid="navbar-logo">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showWhiteNav ? 'bg-[#015388]' : 'bg-white/20'}`}>
-              <Dog className="w-6 h-6 text-white" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showWhiteNav ? 'bg-gradient-to-br from-[#015388] to-[#16A99F]' : 'bg-white/20'}`}>
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-7 h-7 object-contain"
+              />
             </div>
             <span className={`text-xl font-bold ${showWhiteNav ? 'text-[#015388]' : 'text-white'}`}>
               Perdidog

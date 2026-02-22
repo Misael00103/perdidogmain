@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Dog, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Heart } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Heart } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -9,8 +9,12 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <Dog className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <img 
+                  src="/src/images/perdidog5-removebg-preview.png" 
+                  alt="Perdidog Logo" 
+                  className="w-7 h-7 object-contain"
+                />
               </div>
               <span className="text-xl font-bold">Perdidog</span>
             </div>
@@ -95,15 +99,15 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-white/70 text-sm">
                 <Mail className="w-4 h-4 text-[#16A99F]" />
-                <span>soporte@perdidog.com</span>
+                <span>perdidogcontacto@gmail.com</span>
               </li>
               <li className="flex items-center gap-3 text-white/70 text-sm">
                 <Phone className="w-4 h-4 text-[#16A99F]" />
-                <span>+1 (555) 123-4567</span>
+                <span>+1 (849) 250-1084</span>
               </li>
               <li className="flex items-start gap-3 text-white/70 text-sm">
                 <MapPin className="w-4 h-4 text-[#16A99F] mt-0.5" />
-                <span>Ciudad de México, México</span>
+                <span>Santo Domingo, Republica Dominicana</span>
               </li>
             </ul>
           </div>

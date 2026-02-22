@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dog, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const DisclaimerPage = () => {
@@ -13,11 +13,17 @@ const DisclaimerPage = () => {
             Volver al inicio
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <Dog className="w-10 h-10 text-[#16A99F]" />
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <img 
+                src="/src/images/perdidog5-removebg-preview.png" 
+                alt="Perdidog Logo" 
+                className="w-8 h-8 object-contain"
+              />
+            </div>
             <span className="text-2xl font-bold">Perdidog</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold">Descargo de Responsabilidad</h1>
-          <p className="text-white/70 mt-2">Última actualización: Enero 2024</p>
+          <p className="text-white/70 mt-2">Última actualización: Febrero 2024</p>
         </div>
       </header>
 
@@ -105,8 +111,8 @@ const DisclaimerPage = () => {
 
           <h2 className="text-2xl font-bold text-[#015388]">9. Jurisdicción</h2>
           <p>
-            Este descargo de responsabilidad se rige por las leyes de México. Cualquier disputa será 
-            resuelta en los tribunales competentes de la Ciudad de México.
+            Este descargo de responsabilidad se rige por las leyes de la República Dominicana. Cualquier disputa será 
+            resuelta en los tribunales competentes de Santo Domingo.
           </p>
 
           <h2 className="text-2xl font-bold text-[#015388]">10. Contacto</h2>
@@ -115,7 +121,8 @@ const DisclaimerPage = () => {
           </p>
           <ul className="list-none pl-0">
             <li><strong>Email:</strong> legal@perdidog.com</li>
-            <li><strong>Teléfono:</strong> +1 (555) 123-4567</li>
+            <li><strong>Teléfono:</strong> +1 (849) 250-1084</li>
+            <li><strong>Dirección:</strong> República Dominicana</li>
           </ul>
         </div>
       </main>
