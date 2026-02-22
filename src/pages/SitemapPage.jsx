@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Home, FileText, Shield, Map } from "lucide-react";
 import Footer from "@/components/Footer";
+import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 
 const SitemapPage = () => {
   const sections = [
@@ -50,7 +51,7 @@ const SitemapPage = () => {
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
               <img 
-                src="/src/images/perdidog5-removebg-preview.png" 
+                src={perdidogLogo} 
                 alt="Perdidog Logo" 
                 className="w-8 h-8 object-contain"
               />

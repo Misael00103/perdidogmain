@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Heart } from "lucide-react";
+import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 
 const Footer = () => {
   return (
@@ -11,7 +12,7 @@ const Footer = () => {
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
                 <img 
-                  src="/src/images/perdidog5-removebg-preview.png" 
+                  src={perdidogLogo} 
                   alt="Perdidog Logo" 
                   className="w-7 h-7 object-contain"
                 />
@@ -22,10 +23,10 @@ const Footer = () => {
               Conectamos mascotas perdidas con sus familias. Juntos hacemos la diferencia.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+              <a href="https://www.facebook.com/people/Perdidog/61584288943105/" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+              <a href="https://x.com/PerdiDOGoficial" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">

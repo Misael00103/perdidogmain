@@ -25,6 +25,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 
 // Mock data
 const MOCK_REPORTS = [
@@ -478,7 +479,7 @@ const DashboardPage = () => {
           <div className="flex items-center gap-3 px-6 py-5 border-b">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#015388] to-[#16A99F] flex items-center justify-center">
               <img 
-                src="/src/images/perdidog5-removebg-preview.png" 
+                src={perdidogLogo} 
                 alt="Perdidog Logo" 
                 className="w-8 h-8 object-contain"
               />
@@ -739,7 +740,7 @@ const DashboardPage = () => {
                 filteredReports.length === 0 ? (
                   <div className="text-center py-12">
                     <img 
-                      src="/src/images/perdidog5-removebg-preview.png" 
+                      src={perdidogLogo} 
                       alt="No hay reportes" 
                       className="w-12 h-12 mx-auto mb-4 opacity-30 object-contain"
                     />
@@ -768,7 +769,7 @@ const DashboardPage = () => {
                                     <img src={report.image_url} alt="" className="w-full h-full object-cover" />
                                   ) : (
                                     <img 
-                                      src="/src/images/perdidog5-removebg-preview.png" 
+                                      src={perdidogLogo} 
                                       alt="Mascota" 
                                       className="w-6 h-6 object-contain opacity-40"
                                     />

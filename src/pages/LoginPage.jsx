@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
+import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const LoginPage = () => {
           <CardHeader className="text-center pt-8 pb-4">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#015388] to-[#16A99F] flex items-center justify-center mb-4 animate-pulse-slow">
               <img 
-                src="/src/images/perdidog5-removebg-preview.png" 
+                src={perdidogLogo} 
                 alt="Perdidog Logo" 
                 className="w-12 h-12 object-contain"
               />

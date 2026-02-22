@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Dog } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +28,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center gap-2 group" data-testid="navbar-logo">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showWhiteNav ? 'bg-gradient-to-br from-[#015388] to-[#16A99F]' : 'bg-white/20'}`}>
               <img 
-                src="/src/images/perdidog5-removebg-preview.png" 
+                src={perdidogLogo} 
                 alt="Perdidog Logo" 
                 className="w-7 h-7 object-contain"
               />

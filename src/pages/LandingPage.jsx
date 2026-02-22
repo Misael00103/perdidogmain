@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 
 // Componente para contador animado
 const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
@@ -219,7 +220,7 @@ const LandingPage = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-[#16A99F] flex items-center justify-center animate-pulse-slow">
                           <img 
-                            src="/src/images/perdidog5-removebg-preview.png" 
+                            src={perdidogLogo} 
                             alt="Perdidog" 
                             className="w-8 h-8 object-contain"
                           />
@@ -374,7 +375,7 @@ const LandingPage = () => {
       <section id="download" className="py-20 md:py-28 relative" style={{ background: 'linear-gradient(135deg, #015388 0%, #016dad 50%, #16A99F 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
           <img 
-            src="/src/images/perdidog5-removebg-preview.png" 
+            src={perdidogLogo} 
             alt="Perdidog Logo" 
             className="w-16 h-16 mx-auto mb-6 animate-pulse-slow scroll-animate-scale object-contain"
           />
