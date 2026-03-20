@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
+import { reportsAPI, usersAPI, authAPI } from "@/services/api";
 
-// Mock data
+// Mock data (fallback si la API no está disponible)
 const MOCK_REPORTS = [
   {
     id: 1,
@@ -271,37 +272,65 @@ const DashboardPage = () => {
     fetchData();
   }, []);
 
-  const fetchData = () => {
-    // Simular delay de carga
-    setTimeout(() => {
-      setReports(MOCK_REPORTS);
-      setUsers(MOCK_USERS);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Intentar obtener datos de la API
+      const [reportsResponse, usersResponse] = await Promise.all([
+        reportsAPI.getAll(),
+        usersAPI.getAll()
+      ]);
+
+      const reportsData = reportsResponse.data.data || reportsResponse.data;
+      const usersData = usersResponse.data.data || usersResponse.data;
+
+      setReports(Array.isArray(reportsData) ? reportsData : []);
+      setUsers(Array.isArray(usersData) ? usersData : []);
       
       // Calcular estadísticas
-      const lostCount = MOCK_REPORTS.filter(r => r.report_type === "lost").length;
-      const foundCount = MOCK_REPORTS.filter(r => r.report_type === "found").length;
-      const resolvedCount = MOCK_REPORTS.filter(r => r.status === "resolved").length;
-      const activeCount = MOCK_REPORTS.filter(r => r.status === "active").length;
-      const activeUsersCount = MOCK_USERS.filter(u => u.status === "active").length;
+      calculateStats(reportsData, usersData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
       
-      setStats({
-        total_reports: MOCK_REPORTS.length,
-        lost_pets: lostCount,
-        found_pets: foundCount,
-        resolved: resolvedCount,
-        active: activeCount,
-        total_users: MOCK_USERS.length,
-        active_users: activeUsersCount
-      });
-      
+      // Si falla la API, usar datos mock
+      toast.info("Usando datos de demostración");
+      setReports(MOCK_REPORTS);
+      setUsers(MOCK_USERS);
+      calculateStats(MOCK_REPORTS, MOCK_USERS);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("perdidog_token");
-    localStorage.removeItem("perdidog_user");
-    navigate("/login");
+  const calculateStats = (reportsData, usersData) => {
+    const lostCount = reportsData.filter(r => r.report_type === "lost").length;
+    const foundCount = reportsData.filter(r => r.report_type === "found").length;
+    const resolvedCount = reportsData.filter(r => r.status === "resolved").length;
+    const activeCount = reportsData.filter(r => r.status === "active").length;
+    const activeUsersCount = usersData.filter(u => u.status === "active").length;
+    
+    setStats({
+      total_reports: reportsData.length,
+      lost_pets: lostCount,
+      found_pets: foundCount,
+      resolved: resolvedCount,
+      active: activeCount,
+      total_users: usersData.length,
+      active_users: activeUsersCount
+    });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("perdidog_token");
+      localStorage.removeItem("perdidog_refresh_token");
+      localStorage.removeItem("perdidog_user");
+      navigate("/login");
+    }
   };
 
   const resetForm = () => {
@@ -323,88 +352,132 @@ const DashboardPage = () => {
     });
   };
 
-  const handleCreate = () => {
-    // Crear nuevo reporte con ID único
-    const newReport = {
-      ...formData,
-      id: Math.max(...reports.map(r => r.id), 0) + 1,
-      status: "active"
-    };
-    
-    setReports([...reports, newReport]);
-    toast.success("Reporte creado exitosamente");
-    setIsCreateOpen(false);
-    resetForm();
-    
-    // Recalcular stats
-    setTimeout(fetchData, 100);
+  const handleCreate = async () => {
+    try {
+      const response = await reportsAPI.create(formData);
+      const newReport = response.data.data || response.data;
+      
+      setReports([...reports, newReport]);
+      toast.success("Reporte creado exitosamente");
+      setIsCreateOpen(false);
+      resetForm();
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error creating report:", error);
+      toast.error(error.response?.data?.message || "Error al crear el reporte");
+    }
   };
 
-  const handleEdit = () => {
-    const updatedReports = reports.map(r => 
-      r.id === selectedReport.id ? { ...r, ...formData } : r
-    );
-    
-    setReports(updatedReports);
-    toast.success("Reporte actualizado exitosamente");
-    setIsEditOpen(false);
-    setSelectedReport(null);
-    resetForm();
-    
-    // Recalcular stats
-    setTimeout(fetchData, 100);
+  const handleEdit = async () => {
+    try {
+      const response = await reportsAPI.update(selectedReport.id, formData);
+      const updatedReport = response.data.data || response.data;
+      
+      const updatedReports = reports.map(r => 
+        r.id === selectedReport.id ? updatedReport : r
+      );
+      
+      setReports(updatedReports);
+      toast.success("Reporte actualizado exitosamente");
+      setIsEditOpen(false);
+      setSelectedReport(null);
+      resetForm();
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error updating report:", error);
+      toast.error(error.response?.data?.message || "Error al actualizar el reporte");
+    }
   };
 
-  const handleDelete = () => {
-    const updatedReports = reports.filter(r => r.id !== selectedReport.id);
-    
-    setReports(updatedReports);
-    toast.success("Reporte eliminado exitosamente");
-    setIsDeleteOpen(false);
-    setSelectedReport(null);
-    
-    // Recalcular stats
-    setTimeout(fetchData, 100);
+  const handleDelete = async () => {
+    try {
+      await reportsAPI.delete(selectedReport.id);
+      
+      const updatedReports = reports.filter(r => r.id !== selectedReport.id);
+      setReports(updatedReports);
+      toast.success("Reporte eliminado exitosamente");
+      setIsDeleteOpen(false);
+      setSelectedReport(null);
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      toast.error(error.response?.data?.message || "Error al eliminar el reporte");
+    }
   };
 
-  const handleCloseReport = () => {
-    const updatedReports = reports.map(r => 
-      r.id === selectedReport.id ? { ...r, status: "resolved" } : r
-    );
-    
-    setReports(updatedReports);
-    toast.success("Reporte cerrado exitosamente - Mascota reunida con su familia! 🎉");
-    setIsCloseReportOpen(false);
-    setSelectedReport(null);
-    
-    // Recalcular stats
-    setTimeout(fetchData, 100);
+  const handleCloseReport = async () => {
+    try {
+      const response = await reportsAPI.update(selectedReport.id, { status: "resolved" });
+      const updatedReport = response.data.data || response.data;
+      
+      const updatedReports = reports.map(r => 
+        r.id === selectedReport.id ? updatedReport : r
+      );
+      
+      setReports(updatedReports);
+      toast.success("Reporte cerrado exitosamente - Mascota reunida con su familia! 🎉");
+      setIsCloseReportOpen(false);
+      setSelectedReport(null);
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error closing report:", error);
+      toast.error(error.response?.data?.message || "Error al cerrar el reporte");
+    }
   };
 
-  const handleBlockUser = () => {
-    const updatedUsers = users.map(u => 
-      u.id === selectedUser.id ? { ...u, status: u.status === "blocked" ? "active" : "blocked" } : u
-    );
-    
-    setUsers(updatedUsers);
-    toast.success(selectedUser.status === "blocked" ? "Usuario desbloqueado" : "Usuario bloqueado");
-    setIsBlockUserOpen(false);
-    setSelectedUser(null);
-    
-    // Recalcular stats
-    setTimeout(fetchData, 100);
+  const handleBlockUser = async () => {
+    try {
+      const newStatus = selectedUser.status === "blocked" ? "active" : "blocked";
+      
+      // Si estamos bloqueando, usar el endpoint de soft delete
+      // Si estamos desbloqueando, usar el endpoint de restore
+      if (newStatus === "blocked") {
+        await usersAPI.deleteById(selectedUser.id);
+      } else {
+        await usersAPI.restoreUser(selectedUser.id);
+      }
+      
+      const updatedUsers = users.map(u => 
+        u.id === selectedUser.id ? { ...u, status: newStatus } : u
+      );
+      
+      setUsers(updatedUsers);
+      toast.success(newStatus === "blocked" ? "Usuario bloqueado" : "Usuario desbloqueado");
+      setIsBlockUserOpen(false);
+      setSelectedUser(null);
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error blocking/unblocking user:", error);
+      toast.error(error.response?.data?.message || "Error al actualizar el usuario");
+    }
   };
 
-  const handleDeleteUser = () => {
-    const updatedUsers = users.filter(u => u.id !== selectedUser.id);
-    
-    setUsers(updatedUsers);
-    toast.success("Usuario eliminado exitosamente");
-    setIsBlockUserOpen(false);
-    setSelectedUser(null);
-    
-    // Recalcular stats
-    setTimeout(fetchData, 100);
+  const handleDeleteUser = async () => {
+    try {
+      await usersAPI.deleteById(selectedUser.id);
+      
+      const updatedUsers = users.filter(u => u.id !== selectedUser.id);
+      setUsers(updatedUsers);
+      toast.success("Usuario eliminado exitosamente");
+      setIsBlockUserOpen(false);
+      setSelectedUser(null);
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error(error.response?.data?.message || "Error al eliminar el usuario");
+    }
   };
 
   const openEditModal = (report) => {

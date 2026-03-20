@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
+import { authAPI } from "@/services/api";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -23,21 +24,24 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simular delay de API
-    setTimeout(() => {
-      // Mock login - acepta cualquier email/password
-      const mockUser = {
-        id: 1,
-        name: "Administrador",
-        email: loginData.email
-      };
+    try {
+      const response = await authAPI.login(loginData);
+      const { accessToken, refreshToken, user } = response.data;
       
-      localStorage.setItem("perdidog_token", "mock-token-123");
-      localStorage.setItem("perdidog_user", JSON.stringify(mockUser));
+      // Guardar tokens y usuario
+      localStorage.setItem("perdidog_token", accessToken);
+      localStorage.setItem("perdidog_refresh_token", refreshToken);
+      localStorage.setItem("perdidog_user", JSON.stringify(user));
+      
       toast.success("¡Bienvenido de vuelta!");
       navigate("/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      const errorMessage = error.response?.data?.message || "Error al iniciar sesión. Verifica tus credenciales.";
+      toast.error(errorMessage);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
