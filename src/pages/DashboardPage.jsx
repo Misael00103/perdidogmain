@@ -248,21 +248,25 @@ const DashboardPage = () => {
   
   // Form state
   const [formData, setFormData] = useState({
-    pet_type: "dog",
-    pet_name: "",
+    type: "lost",
+    petType: "dog",
     breed: "",
-    color: "",
+    petColor: "",
     gender: "",
     age: "",
     size: "medium",
     description: "",
-    report_type: "lost",
-    location: "",
-    contact_phone: "",
-    contact_email: "",
-    image_url: "",
-    date_lost_found: ""
+    city: "",
+    state: "",
+    zipcode: "",
+    country: "República Dominicana",
+    dateTime: "",
+    contactPhone: "",
+    contactEmail: ""
   });
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("perdidog_user");
@@ -284,6 +288,10 @@ const DashboardPage = () => {
       const reportsData = reportsResponse.data.data || reportsResponse.data;
       const usersData = usersResponse.data.data || usersResponse.data;
 
+      console.log('Reports from API:', reportsData);
+      console.log('Sample report structure:', reportsData[0]);
+      console.log('Users from API:', usersData);
+
       setReports(Array.isArray(reportsData) ? reportsData : []);
       setUsers(Array.isArray(usersData) ? usersData : []);
       
@@ -303,10 +311,10 @@ const DashboardPage = () => {
   };
 
   const calculateStats = (reportsData, usersData) => {
-    const lostCount = reportsData.filter(r => r.report_type === "lost").length;
-    const foundCount = reportsData.filter(r => r.report_type === "found").length;
-    const resolvedCount = reportsData.filter(r => r.status === "resolved").length;
-    const activeCount = reportsData.filter(r => r.status === "active").length;
+    const lostCount = reportsData.filter(r => r.type === "lost").length;
+    const foundCount = reportsData.filter(r => r.type === "found").length;
+    const resolvedCount = reportsData.filter(r => r.status === "resolved" || r.status === "closed").length;
+    const activeCount = reportsData.filter(r => r.status === "active" || r.status === "open").length;
     const activeUsersCount = usersData.filter(u => u.status === "active").length;
     
     setStats({
@@ -335,26 +343,76 @@ const DashboardPage = () => {
 
   const resetForm = () => {
     setFormData({
-      pet_type: "dog",
-      pet_name: "",
+      type: "lost",
+      petType: "dog",
       breed: "",
-      color: "",
+      petColor: "",
       gender: "",
       age: "",
       size: "medium",
       description: "",
-      report_type: "lost",
-      location: "",
-      contact_phone: "",
-      contact_email: "",
-      image_url: "",
-      date_lost_found: ""
+      city: "",
+      state: "",
+      zipcode: "",
+      country: "República Dominicana",
+      dateTime: "",
+      contactPhone: "",
+      contactEmail: ""
     });
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleCreate = async () => {
     try {
-      const response = await reportsAPI.create(formData);
+      // Validar campos requeridos
+      if (!formData.type || !formData.petType || !formData.city || !formData.zipcode || !formData.dateTime) {
+        toast.error("Por favor completa todos los campos requeridos (*)");
+        return;
+      }
+
+      // Crear FormData para enviar imagen
+      const submitData = new FormData();
+      
+      // Agregar campos requeridos primero (asegurar que sean strings)
+      submitData.append('type', String(formData.type || ''));
+      submitData.append('petType', String(formData.petType || ''));
+      submitData.append('city', String(formData.city || ''));
+      submitData.append('zipcode', String(formData.zipcode || ''));
+      submitData.append('dateTime', String(formData.dateTime || ''));
+      
+      // Agregar campos opcionales solo si tienen valor
+      if (formData.breed && formData.breed.trim()) submitData.append('breed', String(formData.breed));
+      if (formData.petColor && formData.petColor.trim()) submitData.append('petColor', String(formData.petColor));
+      if (formData.gender && formData.gender.trim()) submitData.append('gender', String(formData.gender));
+      if (formData.age && formData.age.trim()) submitData.append('age', String(formData.age));
+      if (formData.size && formData.size.trim()) submitData.append('size', String(formData.size));
+      if (formData.description && formData.description.trim()) submitData.append('description', String(formData.description));
+      if (formData.state && formData.state.trim()) submitData.append('state', String(formData.state));
+      if (formData.country && formData.country.trim()) submitData.append('country', String(formData.country));
+      if (formData.contactPhone && formData.contactPhone.trim()) submitData.append('contactPhone', String(formData.contactPhone));
+      if (formData.contactEmail && formData.contactEmail.trim()) submitData.append('contactEmail', String(formData.contactEmail));
+      
+      // Agregar imagen si existe
+      if (selectedImage) {
+        submitData.append('photo', selectedImage);
+      }
+      
+      console.log('Sending data:', Object.fromEntries(submitData));
+      
+      const response = await reportsAPI.create(submitData);
       const newReport = response.data.data || response.data;
       
       setReports([...reports, newReport]);
@@ -366,13 +424,84 @@ const DashboardPage = () => {
       fetchData();
     } catch (error) {
       console.error("Error creating report:", error);
-      toast.error(error.response?.data?.message || "Error al crear el reporte");
+      console.error("Error response:", error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          (Array.isArray(error.response?.data?.message) 
+                            ? error.response.data.message.join(', ')
+                            : "Error al crear el reporte");
+      toast.error(errorMessage);
     }
   };
 
   const handleEdit = async () => {
     try {
-      const response = await reportsAPI.update(selectedReport.id, formData);
+      // Verificar permisos
+      if (!user || selectedReport.userId !== user.id) {
+        toast.error("Solo puedes editar tus propios reportes");
+        return;
+      }
+
+      // Validar campos requeridos
+      if (!formData.type || !formData.petType || !formData.city || !formData.zipcode || !formData.dateTime) {
+        toast.error("Por favor completa todos los campos requeridos (*)");
+        return;
+      }
+
+      let submitData;
+      
+      // Si hay una imagen nueva, usar FormData
+      if (selectedImage) {
+        submitData = new FormData();
+        
+        // Agregar campos requeridos primero (asegurar que sean strings)
+        submitData.append('type', String(formData.type || ''));
+        submitData.append('petType', String(formData.petType || ''));
+        submitData.append('city', String(formData.city || ''));
+        submitData.append('zipcode', String(formData.zipcode || ''));
+        submitData.append('dateTime', String(formData.dateTime || ''));
+        
+        // Agregar campos opcionales solo si tienen valor
+        if (formData.breed && formData.breed.trim()) submitData.append('breed', String(formData.breed));
+        if (formData.petColor && formData.petColor.trim()) submitData.append('petColor', String(formData.petColor));
+        if (formData.gender && formData.gender.trim()) submitData.append('gender', String(formData.gender));
+        if (formData.age && formData.age.trim()) submitData.append('age', String(formData.age));
+        if (formData.size && formData.size.trim()) submitData.append('size', String(formData.size));
+        if (formData.description && formData.description.trim()) submitData.append('description', String(formData.description));
+        if (formData.state && formData.state.trim()) submitData.append('state', String(formData.state));
+        if (formData.country && formData.country.trim()) submitData.append('country', String(formData.country));
+        if (formData.contactPhone && formData.contactPhone.trim()) submitData.append('contactPhone', String(formData.contactPhone));
+        if (formData.contactEmail && formData.contactEmail.trim()) submitData.append('contactEmail', String(formData.contactEmail));
+        
+        // Agregar imagen
+        submitData.append('photo', selectedImage);
+      } else {
+        // Si no hay imagen, enviar como JSON con solo los campos que tienen valor
+        submitData = {
+          type: String(formData.type || ''),
+          petType: String(formData.petType || ''),
+          city: String(formData.city || ''),
+          zipcode: String(formData.zipcode || ''),
+          dateTime: String(formData.dateTime || '')
+        };
+        
+        // Agregar campos opcionales solo si tienen valor
+        if (formData.breed && formData.breed.trim()) submitData.breed = String(formData.breed);
+        if (formData.petColor && formData.petColor.trim()) submitData.petColor = String(formData.petColor);
+        if (formData.gender && formData.gender.trim()) submitData.gender = String(formData.gender);
+        if (formData.age && formData.age.trim()) submitData.age = String(formData.age);
+        if (formData.size && formData.size.trim()) submitData.size = String(formData.size);
+        if (formData.description && formData.description.trim()) submitData.description = String(formData.description);
+        if (formData.state && formData.state.trim()) submitData.state = String(formData.state);
+        if (formData.country && formData.country.trim()) submitData.country = String(formData.country);
+        if (formData.contactPhone && formData.contactPhone.trim()) submitData.contactPhone = String(formData.contactPhone);
+        if (formData.contactEmail && formData.contactEmail.trim()) submitData.contactEmail = String(formData.contactEmail);
+      }
+      
+      console.log('Updating data:', selectedImage ? Object.fromEntries(submitData) : submitData);
+      
+      const response = await reportsAPI.update(selectedReport.id, submitData);
       const updatedReport = response.data.data || response.data;
       
       const updatedReports = reports.map(r => 
@@ -389,12 +518,29 @@ const DashboardPage = () => {
       fetchData();
     } catch (error) {
       console.error("Error updating report:", error);
-      toast.error(error.response?.data?.message || "Error al actualizar el reporte");
+      console.error("Error response:", error.response?.data);
+      console.error("Request config:", error.config);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          (Array.isArray(error.response?.data?.message) 
+                            ? error.response.data.message.join(', ')
+                            : "Error al actualizar el reporte");
+      toast.error(errorMessage);
     }
   };
 
   const handleDelete = async () => {
     try {
+      // Verificar permisos
+      if (!user || selectedReport.userId !== user.id) {
+        toast.error("Solo puedes eliminar tus propios reportes");
+        setIsDeleteOpen(false);
+        setSelectedReport(null);
+        return;
+      }
+
+      console.log('Deleting report with ID:', selectedReport.id);
       await reportsAPI.delete(selectedReport.id);
       
       const updatedReports = reports.filter(r => r.id !== selectedReport.id);
@@ -407,14 +553,39 @@ const DashboardPage = () => {
       fetchData();
     } catch (error) {
       console.error("Error deleting report:", error);
-      toast.error(error.response?.data?.message || "Error al eliminar el reporte");
+      console.error("Error response:", error.response?.data);
+      console.error("Request config:", error.config);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          "Error al eliminar el reporte";
+      toast.error(errorMessage);
     }
   };
 
   const handleCloseReport = async () => {
     try {
-      const response = await reportsAPI.update(selectedReport.id, { status: "resolved" });
+      // Verificar permisos
+      if (!user || selectedReport.userId !== user.id) {
+        toast.error("Solo puedes cerrar tus propios reportes");
+        setIsCloseReportOpen(false);
+        setSelectedReport(null);
+        return;
+      }
+
+      console.log('Closing report with ID:', selectedReport.id);
+      
+      // Enviar solo el status en el body
+      const updateData = { 
+        status: "resolved" 
+      };
+      
+      console.log('Sending update data:', updateData);
+      
+      const response = await reportsAPI.update(selectedReport.id, updateData);
       const updatedReport = response.data.data || response.data;
+      
+      console.log('Update response:', updatedReport);
       
       const updatedReports = reports.map(r => 
         r.id === selectedReport.id ? updatedReport : r
@@ -429,7 +600,14 @@ const DashboardPage = () => {
       fetchData();
     } catch (error) {
       console.error("Error closing report:", error);
-      toast.error(error.response?.data?.message || "Error al cerrar el reporte");
+      console.error("Error response:", error.response?.data);
+      console.error("Request config:", error.config);
+      console.error("Request URL:", error.config?.url);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          "Error al cerrar el reporte. Verifica que el endpoint PATCH /report esté disponible.";
+      toast.error(errorMessage);
     }
   };
 
@@ -482,33 +660,59 @@ const DashboardPage = () => {
 
   const openEditModal = (report) => {
     setSelectedReport(report);
+    
+    // Convertir la fecha al formato datetime-local si existe
+    let dateTimeValue = "";
+    if (report.dateTime) {
+      try {
+        const date = new Date(report.dateTime);
+        dateTimeValue = date.toISOString().slice(0, 16);
+      } catch (e) {
+        console.error("Error parsing date:", e);
+      }
+    }
+    
     setFormData({
-      pet_type: report.pet_type || "dog",
-      pet_name: report.pet_name || "",
+      type: report.type || "lost",
+      petType: report.petType || "dog",
       breed: report.breed || "",
-      color: report.color || "",
+      petColor: report.petColor || "",
       gender: report.gender || "",
       age: report.age || "",
       size: report.size || "medium",
       description: report.description || "",
-      report_type: report.report_type || "lost",
-      location: report.location || "",
-      contact_phone: report.contact_phone || "",
-      contact_email: report.contact_email || "",
-      image_url: report.image_url || "",
-      date_lost_found: report.date_lost_found || ""
+      city: report.city || "",
+      state: report.state || "",
+      zipcode: report.zipcode || "",
+      country: report.country || "República Dominicana",
+      dateTime: dateTimeValue,
+      contactPhone: report.contactPhone || "",
+      contactEmail: report.contactEmail || ""
     });
+    
+    // Si hay imagen, mostrar preview (photos es un array)
+    if (report.photos && report.photos.length > 0) {
+      setImagePreview(report.photos[0].url);
+      setSelectedImage(null); // Limpiar imagen seleccionada
+    }
+    
     setIsEditOpen(true);
   };
 
   const filteredReports = reports.filter(report => {
-    const matchesSearch = 
-      report.pet_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.breed?.toLowerCase().includes(searchTerm.toLowerCase());
+    const description = report.description || "";
+    const city = report.city || "";
+    const breed = report.breed || "";
+    const reportType = report.type || "";
+    const petType = report.petType || "";
     
-    const matchesType = filterType === "all" || report.report_type === filterType;
+    const matchesSearch = 
+      description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      breed.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      petType.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = filterType === "all" || reportType === filterType;
     const matchesStatus = filterStatus === "all" || report.status === filterStatus;
     
     return matchesSearch && matchesType && matchesStatus;
@@ -826,8 +1030,10 @@ const DashboardPage = () => {
                         <TableRow className="bg-gray-50">
                           <TableHead>Mascota</TableHead>
                           <TableHead>Tipo</TableHead>
+                          <TableHead>Detalles</TableHead>
                           <TableHead>Ubicación</TableHead>
                           <TableHead>Contacto</TableHead>
+                          <TableHead>Fecha</TableHead>
                           <TableHead>Estado</TableHead>
                           <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -838,8 +1044,12 @@ const DashboardPage = () => {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                                  {report.image_url ? (
-                                    <img src={report.image_url} alt="" className="w-full h-full object-cover" />
+                                  {report.photos && report.photos.length > 0 ? (
+                                    <img 
+                                      src={report.photos[0].url} 
+                                      alt="" 
+                                      className="w-full h-full object-cover" 
+                                    />
                                   ) : (
                                     <img 
                                       src={perdidogLogo} 
@@ -849,24 +1059,70 @@ const DashboardPage = () => {
                                   )}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-gray-900">{report.pet_name || "Sin nombre"}</p>
-                                  <p className="text-sm text-gray-500">{report.breed || report.pet_type}</p>
+                                  <p className="font-medium text-gray-900">
+                                    {report.breed || <span className="text-gray-400 italic">Sin raza especificada</span>}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {report.petType === "dog" ? "Perro" : 
+                                     report.petType === "cat" ? "Gato" : 
+                                     report.petType === "bird" ? "Ave" : 
+                                     report.petType === "Other" ? "Otra mascota" : 
+                                     report.petType}
+                                  </p>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>{getTypeBadge(report.report_type)}</TableCell>
+                            <TableCell>{getTypeBadge(report.type)}</TableCell>
+                            <TableCell>
+                              <div className="text-sm space-y-1">
+                                {report.petColor && (
+                                  <div className="flex items-center gap-1 text-gray-600">
+                                    <span className="font-medium">Color:</span> {report.petColor}
+                                  </div>
+                                )}
+                                {report.size && (
+                                  <div className="flex items-center gap-1 text-gray-600">
+                                    <span className="font-medium">Tamaño:</span> {
+                                      report.size.toLowerCase() === "small" ? "Pequeño" :
+                                      report.size.toLowerCase() === "medium" ? "Mediano" :
+                                      report.size.toLowerCase() === "large" ? "Grande" : report.size
+                                    }
+                                  </div>
+                                )}
+                                {report.gender && (
+                                  <div className="flex items-center gap-1 text-gray-600">
+                                    <span className="font-medium">Género:</span> {
+                                      report.gender.toLowerCase() === "male" ? "Macho" :
+                                      report.gender.toLowerCase() === "female" ? "Hembra" : "Desconocido"
+                                    }
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1 text-sm text-gray-600">
                                 <MapPin className="w-4 h-4" />
-                                {report.location || "-"}
+                                <div>
+                                  <div>{report.city || "-"}</div>
+                                  {report.state && <div className="text-xs text-gray-500">{report.state}</div>}
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
                                 <div className="flex items-center gap-1 text-gray-600">
                                   <Phone className="w-3 h-3" />
-                                  {report.contact_phone}
+                                  {report.contactPhone || "-"}
                                 </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-gray-600">
+                                {report.dateTime ? new Date(report.dateTime).toLocaleDateString('es-ES', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                }) : "-"}
                               </div>
                             </TableCell>
                             <TableCell>{getStatusBadge(report.status)}</TableCell>
@@ -878,23 +1134,32 @@ const DashboardPage = () => {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {report.status === "active" && (
-                                    <DropdownMenuItem onClick={() => { setSelectedReport(report); setIsCloseReportOpen(true); }} className="text-green-600">
-                                      <CheckCircle className="w-4 h-4 mr-2" />
-                                      Cerrar Reporte
+                                  {user && report.userId === user.id ? (
+                                    <>
+                                      {report.status === "active" && (
+                                        <DropdownMenuItem onClick={() => { setSelectedReport(report); setIsCloseReportOpen(true); }} className="text-green-600">
+                                          <CheckCircle className="w-4 h-4 mr-2" />
+                                          Cerrar Reporte
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem onClick={() => openEditModal(report)}>
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Editar
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => { setSelectedReport(report); setIsDeleteOpen(true); }}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Eliminar
+                                      </DropdownMenuItem>
+                                    </>
+                                  ) : (
+                                    <DropdownMenuItem disabled className="text-gray-400 cursor-not-allowed">
+                                      <Ban className="w-4 h-4 mr-2" />
+                                      Solo puedes editar tus propios reportes
                                     </DropdownMenuItem>
                                   )}
-                                  <DropdownMenuItem onClick={() => openEditModal(report)}>
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Editar
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => { setSelectedReport(report); setIsDeleteOpen(true); }}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Eliminar
-                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -1034,20 +1299,25 @@ const DashboardPage = () => {
       </main>
 
       {/* Create/Edit Modal */}
-      <Dialog open={isCreateOpen || isEditOpen} onOpenChange={(open) => { if (!open) { setIsCreateOpen(false); setIsEditOpen(false); } }}>
+      <Dialog open={isCreateOpen || isEditOpen} onOpenChange={(open) => { if (!open) { setIsCreateOpen(false); setIsEditOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-[#015388]">
               {isEditOpen ? "Editar Reporte" : "Nuevo Reporte"}
             </DialogTitle>
+            <DialogDescription>
+              {isEditOpen 
+                ? "Actualiza la información del reporte de mascota." 
+                : "Completa el formulario para crear un nuevo reporte de mascota perdida o encontrada."}
+            </DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label>Tipo de Reporte</Label>
+              <Label>Tipo de Reporte *</Label>
               <Select 
-                value={formData.report_type} 
-                onValueChange={(v) => setFormData({...formData, report_type: v})}
+                value={formData.type} 
+                onValueChange={(v) => setFormData({...formData, type: v})}
               >
                 <SelectTrigger data-testid="form-report-type">
                   <SelectValue />
@@ -1060,10 +1330,10 @@ const DashboardPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de Mascota</Label>
+              <Label>Tipo de Mascota *</Label>
               <Select 
-                value={formData.pet_type} 
-                onValueChange={(v) => setFormData({...formData, pet_type: v})}
+                value={formData.petType} 
+                onValueChange={(v) => setFormData({...formData, petType: v})}
               >
                 <SelectTrigger data-testid="form-pet-type">
                   <SelectValue />
@@ -1071,19 +1341,10 @@ const DashboardPage = () => {
                 <SelectContent>
                   <SelectItem value="dog">Perro</SelectItem>
                   <SelectItem value="cat">Gato</SelectItem>
+                  <SelectItem value="bird">Ave</SelectItem>
                   <SelectItem value="other">Otro</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nombre de la Mascota</Label>
-              <Input
-                value={formData.pet_name}
-                onChange={(e) => setFormData({...formData, pet_name: e.target.value})}
-                placeholder="Ej: Max"
-                data-testid="form-pet-name"
-              />
             </div>
 
             <div className="space-y-2">
@@ -1091,16 +1352,17 @@ const DashboardPage = () => {
               <Input
                 value={formData.breed}
                 onChange={(e) => setFormData({...formData, breed: e.target.value})}
-                placeholder="Ej: Golden Retriever"
+                placeholder="Ej: Golden Retriever (opcional)"
                 data-testid="form-breed"
               />
+              <p className="text-xs text-gray-500">Si no conoces la raza, déjalo en blanco</p>
             </div>
 
             <div className="space-y-2">
               <Label>Color</Label>
               <Input
-                value={formData.color}
-                onChange={(e) => setFormData({...formData, color: e.target.value})}
+                value={formData.petColor}
+                onChange={(e) => setFormData({...formData, petColor: e.target.value})}
                 placeholder="Ej: Dorado"
                 data-testid="form-color"
               />
@@ -1118,6 +1380,7 @@ const DashboardPage = () => {
                 <SelectContent>
                   <SelectItem value="male">Macho</SelectItem>
                   <SelectItem value="female">Hembra</SelectItem>
+                  <SelectItem value="unknown">Desconocido</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1149,14 +1412,46 @@ const DashboardPage = () => {
               />
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Ubicación *</Label>
+            <div className="space-y-2">
+              <Label>Ciudad *</Label>
               <Input
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="Ej: Colonia Roma, CDMX"
+                value={formData.city}
+                onChange={(e) => setFormData({...formData, city: e.target.value})}
+                placeholder="Ej: Santo Domingo"
                 required
-                data-testid="form-location"
+                data-testid="form-city"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Estado/Provincia</Label>
+              <Input
+                value={formData.state}
+                onChange={(e) => setFormData({...formData, state: e.target.value})}
+                placeholder="Ej: Distrito Nacional"
+                data-testid="form-state"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Código Postal *</Label>
+              <Input
+                value={formData.zipcode}
+                onChange={(e) => setFormData({...formData, zipcode: e.target.value})}
+                placeholder="Ej: 10101"
+                required
+                data-testid="form-zipcode"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Fecha y Hora *</Label>
+              <Input
+                type="datetime-local"
+                value={formData.dateTime}
+                onChange={(e) => setFormData({...formData, dateTime: e.target.value})}
+                required
+                data-testid="form-datetime"
               />
             </div>
 
@@ -1175,9 +1470,9 @@ const DashboardPage = () => {
             <div className="space-y-2">
               <Label>Teléfono de Contacto *</Label>
               <Input
-                value={formData.contact_phone}
-                onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
-                placeholder="Ej: +52 55 1234 5678"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
+                placeholder="Ej: +1 (849) 250-1084"
                 required
                 data-testid="form-phone"
               />
@@ -1187,21 +1482,31 @@ const DashboardPage = () => {
               <Label>Email de Contacto</Label>
               <Input
                 type="email"
-                value={formData.contact_email}
-                onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                value={formData.contactEmail}
+                onChange={(e) => setFormData({...formData, contactEmail: e.target.value})}
                 placeholder="Ej: contacto@email.com"
                 data-testid="form-email"
               />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label>URL de Imagen</Label>
+              <Label>Foto de la Mascota</Label>
               <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                placeholder="https://ejemplo.com/foto.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
                 data-testid="form-image"
+                className="cursor-pointer"
               />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                </div>
+              )}
             </div>
 
             {isEditOpen && (
@@ -1217,7 +1522,6 @@ const DashboardPage = () => {
                   <SelectContent>
                     <SelectItem value="active">Activo</SelectItem>
                     <SelectItem value="resolved">Resuelto</SelectItem>
-                    <SelectItem value="closed">Cerrado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1227,7 +1531,7 @@ const DashboardPage = () => {
           <DialogFooter className="gap-2">
             <Button 
               variant="outline" 
-              onClick={() => { setIsCreateOpen(false); setIsEditOpen(false); }}
+              onClick={() => { setIsCreateOpen(false); setIsEditOpen(false); resetForm(); }}
             >
               Cancelar
             </Button>

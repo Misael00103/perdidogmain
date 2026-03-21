@@ -1,137 +1,225 @@
-# Perdidog - Plataforma de Mascotas Perdidas
+# Perdidog - Plataforma para Mascotas Perdidas
 
-Aplicación web para reportar, buscar y encontrar mascotas perdidas.
+Perdidog es una plataforma web que conecta a personas que han perdido mascotas con personas que han encontrado animales. Incluye un dashboard administrativo completo para gestionar reportes y usuarios.
 
 ## 🚀 Características
 
-- Reportes de mascotas perdidas y encontradas
-- Dashboard administrativo
-- Gestión de usuarios
-- Animaciones fluidas y diseño moderno
-- Responsive design
+### Frontend
+- ✅ Landing page moderna y responsive
+- ✅ Dashboard administrativo completo
+- ✅ Gestión de reportes (perdidos/encontrados)
+- ✅ Gestión de usuarios
+- ✅ Estadísticas en tiempo real
+- ✅ Autenticación con JWT
+- ✅ Modo fallback con datos mock
+- ✅ SEO optimizado
+- ✅ Páginas legales completas
 
-## 📋 Requisitos
+### Backend (API)
+- ✅ API REST completa
+- ✅ Autenticación JWT con refresh tokens
+- ✅ CRUD de reportes
+- ✅ CRUD de usuarios
+- ✅ Sistema de chat
+- ✅ Geolocalización
+- ✅ Documentación Swagger
 
-- Node.js 18+
-- npm o yarn
-- Docker (opcional, para despliegue)
+## 📦 Tecnologías
 
-## 🛠️ Instalación Local
+- **Frontend:** React 18, Vite, TailwindCSS, Radix UI
+- **Backend:** Node.js, Express (API separada)
+- **Autenticación:** JWT
+- **HTTP Client:** Axios
+- **Notificaciones:** Sonner
+- **Iconos:** Lucide React
+
+## 🔧 Instalación
 
 ```bash
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/perdidog.git
+cd perdidog
+
 # Instalar dependencias
 npm install
 
-# Ejecutar en desarrollo
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus configuraciones
+```
+
+## ⚙️ Configuración
+
+### Variables de Entorno
+
+Crea un archivo `.env` en la raíz del proyecto:
+
+```env
+# API Configuration
+VITE_API_URL=https://backend.perdidog.cloud/api
+
+# App Configuration
+VITE_APP_NAME=Perdidog
+VITE_APP_URL=http://localhost:5173
+```
+
+### API Backend
+
+La API está desplegada en: `https://backend.perdidog.cloud/api`
+
+Documentación completa: https://backend.perdidog.cloud/api/docs
+
+## 🚀 Desarrollo
+
+```bash
+# Iniciar servidor de desarrollo
 npm run dev
 
 # Compilar para producción
 npm run build
 
-# Vista previa de producción
+# Preview del build de producción
 npm run preview
+
+# Probar conexión con la API
+node test-api.js
 ```
 
-## 🐳 Despliegue con Docker
-
-### Opción 1: Docker Build
-
-```bash
-# Construir la imagen
-docker build -t perdidog-app .
-
-# Ejecutar el contenedor
-docker run -d -p 80:80 --name perdidog perdidog-app
-```
-
-### Opción 2: Docker Compose
-
-```bash
-# Iniciar la aplicación
-docker-compose up -d
-
-# Detener la aplicación
-docker-compose down
-
-# Ver logs
-docker-compose logs -f
-```
-
-## 🌐 Despliegue en Hosting
-
-### Vercel
-```bash
-npm install -g vercel
-vercel --prod
-```
-
-### Netlify
-```bash
-npm install -g netlify-cli
-netlify deploy --prod
-```
-
-### Railway
-1. Conecta tu repositorio de GitHub
-2. Railway detectará automáticamente el Dockerfile
-3. Despliega automáticamente
-
-### Render
-1. Conecta tu repositorio
-2. Selecciona "Docker" como entorno
-3. Despliega
-
-### DigitalOcean App Platform
-1. Conecta tu repositorio
-2. Selecciona Dockerfile
-3. Configura el puerto 80
-4. Despliega
-
-## 📦 Estructura del Proyecto
+## 📱 Estructura del Proyecto
 
 ```
 perdidog/
 ├── src/
-│   ├── components/     # Componentes reutilizables
-│   ├── pages/         # Páginas de la aplicación
-│   ├── lib/           # Utilidades
-│   ├── App.jsx        # Componente principal
-│   └── main.jsx       # Punto de entrada
-├── public/            # Archivos estáticos
-├── Dockerfile         # Configuración Docker
-├── nginx.conf         # Configuración Nginx
-└── package.json       # Dependencias
+│   ├── components/       # Componentes reutilizables
+│   │   ├── ui/          # Componentes de UI (Radix)
+│   │   ├── Navbar.jsx
+│   │   ├── Footer.jsx
+│   │   └── ProtectedRoute.jsx
+│   ├── pages/           # Páginas de la aplicación
+│   │   ├── LandingPage.jsx
+│   │   ├── LoginPage.jsx
+│   │   ├── DashboardPage.jsx
+│   │   ├── TermsPage.jsx
+│   │   ├── PrivacyPage.jsx
+│   │   ├── DisclaimerPage.jsx
+│   │   ├── SafetyReportPage.jsx
+│   │   └── SitemapPage.jsx
+│   ├── services/        # Servicios de API
+│   │   └── api.js
+│   ├── images/          # Imágenes y assets
+│   ├── lib/            # Utilidades
+│   ├── hooks/          # Custom hooks
+│   ├── App.jsx
+│   └── main.jsx
+├── public/
+├── .env                # Variables de entorno (no commitear)
+├── .env.example        # Ejemplo de variables
+├── .env.production     # Variables de producción
+├── vite.config.js
+├── tailwind.config.js
+└── package.json
 ```
 
-## 🔧 Variables de Entorno
+## 🔐 Autenticación
 
-Crea un archivo `.env.local` para desarrollo:
+El sistema usa JWT (JSON Web Tokens) con refresh tokens:
 
-```env
-VITE_APP_NAME=Perdidog
-VITE_APP_VERSION=1.0.0
+1. Login: `POST /api/auth/login`
+2. Los tokens se guardan en localStorage
+3. El interceptor de Axios agrega automáticamente el token a cada request
+4. Si el token expira, se refresca automáticamente
+5. Si el refresh falla, redirige al login
+
+## 📊 Dashboard
+
+El dashboard administrativo incluye:
+
+- **Reportes:**
+  - Ver todos los reportes
+  - Crear nuevos reportes
+  - Editar reportes existentes
+  - Eliminar reportes
+  - Cerrar reportes (marcar como resueltos)
+  - Filtros por tipo y estado
+  - Búsqueda en tiempo real
+
+- **Usuarios:**
+  - Ver todos los usuarios
+  - Ver usuarios reportados
+  - Bloquear/desbloquear usuarios
+  - Eliminar usuarios
+  - Filtros y búsqueda
+
+- **Estadísticas:**
+  - Total de reportes
+  - Mascotas perdidas/encontradas
+  - Reportes resueltos
+  - Total de usuarios activos
+
+## 🌐 Despliegue
+
+### Vercel (Recomendado)
+
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Desplegar
+vercel --prod
 ```
 
-## 📝 Scripts Disponibles
+### Netlify
 
-- `npm run dev` - Inicia el servidor de desarrollo
-- `npm run build` - Compila para producción
-- `npm run preview` - Vista previa de la build de producción
-- `npm run lint` - Ejecuta el linter
+```bash
+# Instalar Netlify CLI
+npm i -g netlify-cli
 
-## 🎨 Tecnologías
+# Desplegar
+netlify deploy --prod --dir=dist
+```
 
-- React 18
-- Vite
-- Tailwind CSS
-- Radix UI
-- Lucide Icons
-- React Router DOM
+### Docker
+
+```bash
+# Build
+docker build -t perdidog-app .
+
+# Run
+docker run -d -p 80:80 perdidog-app
+```
+
+## 📝 Documentación Adicional
+
+- [Configuración de la API](./API_SETUP.md)
+- [Guía de Despliegue](./DEPLOYMENT.md)
+
+## 🤝 Contribuir
+
+Las contribuciones son bienvenidas! Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
 ## 📄 Licencia
 
-MIT
+Este proyecto está bajo la Licencia MIT.
 
-## 👥 Autor
+## 📧 Contacto
 
-Perdidog Team
+- Email: perdidogcontacto@gmail.com
+- Teléfono: +1 (849) 250-1084
+- Ubicación: República Dominicana
+
+## 🙏 Agradecimientos
+
+- [Radix UI](https://www.radix-ui.com/) - Componentes de UI
+- [Lucide](https://lucide.dev/) - Iconos
+- [TailwindCSS](https://tailwindcss.com/) - Estilos
+- [Vite](https://vitejs.dev/) - Build tool
+
+---
+
+Hecho con ❤️ para las mascotas

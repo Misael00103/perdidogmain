@@ -106,11 +106,24 @@ export const postPhotosAPI = {
 
 // ==================== REPORTS ====================
 export const reportsAPI = {
-  create: (data) => api.post('/report', data),
+  create: (data) => {
+    // Si es FormData, cambiar el Content-Type
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {};
+    return api.post('/report', data, config);
+  },
   getAll: (params) => api.get('/report', { params }),
   getById: (id) => api.get(`/report/${id}`),
-  update: (id, data) => api.patch(`/report/${id}`, data),
-  delete: (id) => api.delete(`/report/${id}`),
+  update: (id, data) => {
+    // Si es FormData, cambiar el Content-Type
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {};
+    // Usar PATCH con query parameter según la API
+    return api.patch(`/report?id=${id}`, data, config);
+  },
+  delete: (id) => api.delete(`/report?id=${id}`),
   getNear: (params) => api.get('/report/near', { params }),
   getRecent: (params) => api.get('/report/recent', { params }),
 };
