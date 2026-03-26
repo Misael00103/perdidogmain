@@ -91,6 +91,11 @@ const Footer = () => {
                   Mapa del Sitio
                 </Link>
               </li>
+              <li>
+                <Link to="/delete-account" className="text-white/70 hover:text-white transition-colors text-sm" data-testid="footer-delete-account">
+                  Eliminar Cuenta
+                </Link>
+              </li>
             </ul>
           </div>
 

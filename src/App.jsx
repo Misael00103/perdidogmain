@@ -9,6 +9,7 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import SitemapPage from "@/pages/SitemapPage";
 import DisclaimerPage from "@/pages/DisclaimerPage";
 import SafetyReportPage from "@/pages/SafetyReportPage";
+import DeleteAccountPage from "@/pages/DeleteAccountPage";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -24,6 +25,7 @@ function App() {
           <Route path="/sitemap" element={<SitemapPage />} />
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/safety-report" element={<SafetyReportPage />} />
+          <Route path="/delete-account" element={<DeleteAccountPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
