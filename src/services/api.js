@@ -101,9 +101,33 @@ export const postsAPI = {
 
 // ==================== POST PHOTOS ====================
 export const postPhotosAPI = {
+  create: (data) => api.post('/post-photo', data),
   getAll: (params) => api.get('/post-photo', { params }),
   getById: (id) => api.get(`/post-photo/${id}`),
   delete: (id) => api.delete(`/post-photo/${id}`),
+};
+
+// ==================== UPLOAD ====================
+export const uploadAPI = {
+  create: (fileData) => {
+    const formData = fileData instanceof FormData ? fileData : new FormData();
+
+    if (!(fileData instanceof FormData) && fileData) {
+      formData.append("file", fileData);
+    }
+
+    return api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
+// ==================== REPORT PHOTOS ====================
+export const reportPhotosAPI = {
+  create: (data) => api.post('/report-photo', data),
+  getAll: (params) => api.get('/report-photo', { params }),
+  getById: (id) => api.get(`/report-photo/${id}`),
+  delete: (id) => api.delete(`/report-photo/${id}`),
 };
 
 // ==================== REPORTS ====================

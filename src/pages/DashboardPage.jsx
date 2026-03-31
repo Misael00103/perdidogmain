@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
-import { reportsAPI, usersAPI, authAPI } from "@/services/api";
+import { reportsAPI, usersAPI, authAPI, uploadAPI, reportPhotosAPI } from "@/services/api";
 
 // Mock data (fallback si la API no está disponible)
 const MOCK_REPORTS = [
@@ -375,6 +375,39 @@ const DashboardPage = () => {
     }
   };
 
+  const extractUploadedUrl = (uploadResponse) => {
+    const payload = uploadResponse?.data?.data ?? uploadResponse?.data ?? {};
+    return (
+      payload.url ||
+      payload.fileUrl ||
+      payload.secure_url ||
+      payload.location ||
+      payload.path ||
+      ""
+    );
+  };
+
+  const attachImageToReport = async (reportId, imageFile) => {
+    if (!reportId || !imageFile) return;
+
+    const uploadFormData = new FormData();
+    // Soportar implementaciones que esperan "file" o "photo"
+    uploadFormData.append("file", imageFile);
+    uploadFormData.append("photo", imageFile);
+
+    const uploadResponse = await uploadAPI.create(uploadFormData);
+    const imageUrl = extractUploadedUrl(uploadResponse);
+
+    if (!imageUrl) {
+      throw new Error("No se pudo obtener la URL de la imagen subida.");
+    }
+
+    await reportPhotosAPI.create({
+      reportId,
+      url: imageUrl,
+    });
+  };
+
   const handleCreate = async () => {
     try {
       // Validar campos requeridos
@@ -383,37 +416,39 @@ const DashboardPage = () => {
         return;
       }
 
-      // Crear FormData para enviar imagen
-      const submitData = new FormData();
-      
-      // Agregar campos requeridos primero (asegurar que sean strings)
-      submitData.append('type', String(formData.type || ''));
-      submitData.append('petType', String(formData.petType || ''));
-      submitData.append('city', String(formData.city || ''));
-      submitData.append('zipcode', String(formData.zipcode || ''));
-      submitData.append('dateTime', String(formData.dateTime || ''));
+      const submitData = {
+        type: String(formData.type || ''),
+        petType: String(formData.petType || ''),
+        city: String(formData.city || ''),
+        zipcode: String(formData.zipcode || ''),
+        dateTime: String(formData.dateTime || '')
+      };
       
       // Agregar campos opcionales solo si tienen valor
-      if (formData.breed && formData.breed.trim()) submitData.append('breed', String(formData.breed));
-      if (formData.petColor && formData.petColor.trim()) submitData.append('petColor', String(formData.petColor));
-      if (formData.gender && formData.gender.trim()) submitData.append('gender', String(formData.gender));
-      if (formData.age && formData.age.trim()) submitData.append('age', String(formData.age));
-      if (formData.size && formData.size.trim()) submitData.append('size', String(formData.size));
-      if (formData.description && formData.description.trim()) submitData.append('description', String(formData.description));
-      if (formData.state && formData.state.trim()) submitData.append('state', String(formData.state));
-      if (formData.country && formData.country.trim()) submitData.append('country', String(formData.country));
-      if (formData.contactPhone && formData.contactPhone.trim()) submitData.append('contactPhone', String(formData.contactPhone));
-      if (formData.contactEmail && formData.contactEmail.trim()) submitData.append('contactEmail', String(formData.contactEmail));
+      if (formData.breed && formData.breed.trim()) submitData.breed = String(formData.breed);
+      if (formData.petColor && formData.petColor.trim()) submitData.petColor = String(formData.petColor);
+      if (formData.gender && formData.gender.trim()) submitData.gender = String(formData.gender);
+      if (formData.age && formData.age.trim()) submitData.age = String(formData.age);
+      if (formData.size && formData.size.trim()) submitData.size = String(formData.size);
+      if (formData.description && formData.description.trim()) submitData.description = String(formData.description);
+      if (formData.state && formData.state.trim()) submitData.state = String(formData.state);
+      if (formData.country && formData.country.trim()) submitData.country = String(formData.country);
+      if (formData.contactPhone && formData.contactPhone.trim()) submitData.contactPhone = String(formData.contactPhone);
+      if (formData.contactEmail && formData.contactEmail.trim()) submitData.contactEmail = String(formData.contactEmail);
       
-      // Agregar imagen si existe
-      if (selectedImage) {
-        submitData.append('photo', selectedImage);
-      }
-      
-      console.log('Sending data:', Object.fromEntries(submitData));
+      console.log('Sending data:', submitData);
       
       const response = await reportsAPI.create(submitData);
       const newReport = response.data.data || response.data;
+
+      if (selectedImage && newReport?.id) {
+        try {
+          await attachImageToReport(newReport.id, selectedImage);
+        } catch (photoError) {
+          console.error("Error attaching report image:", photoError);
+          toast.error("El reporte se creó, pero no se pudo guardar la imagen.");
+        }
+      }
       
       setReports([...reports, newReport]);
       toast.success("Reporte creado exitosamente");
@@ -449,60 +484,39 @@ const DashboardPage = () => {
         return;
       }
 
-      let submitData;
+      const submitData = {
+        type: String(formData.type || ''),
+        petType: String(formData.petType || ''),
+        city: String(formData.city || ''),
+        zipcode: String(formData.zipcode || ''),
+        dateTime: String(formData.dateTime || '')
+      };
       
-      // Si hay una imagen nueva, usar FormData
-      if (selectedImage) {
-        submitData = new FormData();
-        
-        // Agregar campos requeridos primero (asegurar que sean strings)
-        submitData.append('type', String(formData.type || ''));
-        submitData.append('petType', String(formData.petType || ''));
-        submitData.append('city', String(formData.city || ''));
-        submitData.append('zipcode', String(formData.zipcode || ''));
-        submitData.append('dateTime', String(formData.dateTime || ''));
-        
-        // Agregar campos opcionales solo si tienen valor
-        if (formData.breed && formData.breed.trim()) submitData.append('breed', String(formData.breed));
-        if (formData.petColor && formData.petColor.trim()) submitData.append('petColor', String(formData.petColor));
-        if (formData.gender && formData.gender.trim()) submitData.append('gender', String(formData.gender));
-        if (formData.age && formData.age.trim()) submitData.append('age', String(formData.age));
-        if (formData.size && formData.size.trim()) submitData.append('size', String(formData.size));
-        if (formData.description && formData.description.trim()) submitData.append('description', String(formData.description));
-        if (formData.state && formData.state.trim()) submitData.append('state', String(formData.state));
-        if (formData.country && formData.country.trim()) submitData.append('country', String(formData.country));
-        if (formData.contactPhone && formData.contactPhone.trim()) submitData.append('contactPhone', String(formData.contactPhone));
-        if (formData.contactEmail && formData.contactEmail.trim()) submitData.append('contactEmail', String(formData.contactEmail));
-        
-        // Agregar imagen
-        submitData.append('photo', selectedImage);
-      } else {
-        // Si no hay imagen, enviar como JSON con solo los campos que tienen valor
-        submitData = {
-          type: String(formData.type || ''),
-          petType: String(formData.petType || ''),
-          city: String(formData.city || ''),
-          zipcode: String(formData.zipcode || ''),
-          dateTime: String(formData.dateTime || '')
-        };
-        
-        // Agregar campos opcionales solo si tienen valor
-        if (formData.breed && formData.breed.trim()) submitData.breed = String(formData.breed);
-        if (formData.petColor && formData.petColor.trim()) submitData.petColor = String(formData.petColor);
-        if (formData.gender && formData.gender.trim()) submitData.gender = String(formData.gender);
-        if (formData.age && formData.age.trim()) submitData.age = String(formData.age);
-        if (formData.size && formData.size.trim()) submitData.size = String(formData.size);
-        if (formData.description && formData.description.trim()) submitData.description = String(formData.description);
-        if (formData.state && formData.state.trim()) submitData.state = String(formData.state);
-        if (formData.country && formData.country.trim()) submitData.country = String(formData.country);
-        if (formData.contactPhone && formData.contactPhone.trim()) submitData.contactPhone = String(formData.contactPhone);
-        if (formData.contactEmail && formData.contactEmail.trim()) submitData.contactEmail = String(formData.contactEmail);
-      }
+      // Agregar campos opcionales solo si tienen valor
+      if (formData.breed && formData.breed.trim()) submitData.breed = String(formData.breed);
+      if (formData.petColor && formData.petColor.trim()) submitData.petColor = String(formData.petColor);
+      if (formData.gender && formData.gender.trim()) submitData.gender = String(formData.gender);
+      if (formData.age && formData.age.trim()) submitData.age = String(formData.age);
+      if (formData.size && formData.size.trim()) submitData.size = String(formData.size);
+      if (formData.description && formData.description.trim()) submitData.description = String(formData.description);
+      if (formData.state && formData.state.trim()) submitData.state = String(formData.state);
+      if (formData.country && formData.country.trim()) submitData.country = String(formData.country);
+      if (formData.contactPhone && formData.contactPhone.trim()) submitData.contactPhone = String(formData.contactPhone);
+      if (formData.contactEmail && formData.contactEmail.trim()) submitData.contactEmail = String(formData.contactEmail);
       
-      console.log('Updating data:', selectedImage ? Object.fromEntries(submitData) : submitData);
+      console.log('Updating data:', submitData);
       
       const response = await reportsAPI.update(selectedReport.id, submitData);
       const updatedReport = response.data.data || response.data;
+
+      if (selectedImage && selectedReport?.id) {
+        try {
+          await attachImageToReport(selectedReport.id, selectedImage);
+        } catch (photoError) {
+          console.error("Error attaching updated report image:", photoError);
+          toast.error("El reporte se actualizó, pero no se pudo guardar la imagen.");
+        }
+      }
       
       const updatedReports = reports.map(r => 
         r.id === selectedReport.id ? updatedReport : r
