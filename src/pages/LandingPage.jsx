@@ -71,6 +71,11 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
 };
 
 const LandingPage = () => {
+  const stats = [
+    { value: 300, suffix: "+", label: "Usuarios Activos" },
+    { value: 100, suffix: "+", label: "Ciudades" }
+  ];
+
   // Scroll animation observer
   useEffect(() => {
     const observerOptions = {
@@ -92,6 +97,13 @@ const LandingPage = () => {
 
     return () => observer.disconnect();
   }, []);
+
+  const handleScrollToDownload = () => {
+    const downloadSection = document.getElementById('download');
+    if (downloadSection) {
+      downloadSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   const features = [
     {
       icon: Search,
@@ -148,11 +160,6 @@ const LandingPage = () => {
     }
   ];
 
-  const stats = [
-    { value: 15, suffix: "K+", label: "Mascotas Reunidas" },
-    { value: 50, suffix: "K+", label: "Usuarios Activos" },
-    { value: 100, suffix: "+", label: "Ciudades" }
-  ];
 
   return (
     <div className="min-h-screen" data-testid="landing-page">
@@ -184,6 +191,7 @@ const LandingPage = () => {
                   size="lg" 
                   className="bg-white text-[#015388] hover:bg-gray-100 rounded-full px-8 h-14 text-base font-semibold group transition-all hover:scale-105"
                   data-testid="hero-download-btn"
+                  onClick={handleScrollToDownload}
                 >
                   <Play className="w-5 h-5 mr-2 fill-current" />
                   Descargar Gratis
