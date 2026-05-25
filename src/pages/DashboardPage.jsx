@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import perdidogLogo from "@/images/perdidog5-removebg-preview.png";
 import { reportsAPI, usersAPI, authAPI, uploadAPI, reportPhotosAPI } from "@/services/api";
+import api from "@/services/api";
 
 // Mock data (fallback si la API no está disponible)
 const MOCK_REPORTS = [
@@ -196,6 +197,21 @@ const MOCK_USERS = [
   }
 ];
 
+// Función helper para obtener la URL de la imagen de forma segura
+const getReportImageUrl = (report) => {
+  if (!report) return null;
+  
+  // Verificar si tiene photos array
+  if (report.photos && Array.isArray(report.photos) && report.photos.length > 0) {
+    const photo = report.photos[0];
+    // La URL puede estar en diferentes propiedades
+    return photo.url || photo.photoUrl || photo.imageUrl || null;
+  }
+  
+  // Fallback a propiedades antiguas
+  return report.photoUrl || report.imageUrl || report.image_url || null;
+};
+
 // Componente para contador animado
 const AnimatedCounter = ({ value, duration = 2000 }) => {
   const [count, setCount] = useState(0);
@@ -228,7 +244,7 @@ const DashboardPage = () => {
   const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
   const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({ total_reports: 0, lost_pets: 0, found_pets: 0, resolved: 0, active: 0, total_users: 0, active_users: 0 });
+  const [stats, setStats] = useState({ total_reports: 0, lost_pets: 0, found_pets: 0, viewed: 0, total_users: 0, active_users: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -242,6 +258,7 @@ const DashboardPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isCloseReportOpen, setIsCloseReportOpen] = useState(false);
+  const [isMarkViewedOpen, setIsMarkViewedOpen] = useState(false);
   const [isBlockUserOpen, setIsBlockUserOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -285,20 +302,56 @@ const DashboardPage = () => {
         usersAPI.getAll()
       ]);
 
-      const reportsData = reportsResponse.data.data || reportsResponse.data;
-      const usersData = usersResponse.data.data || usersResponse.data;
+      // Intentar diferentes estructuras de respuesta
+      let reportsData = reportsResponse.data?.data || reportsResponse.data || reportsResponse;
+      let usersData = usersResponse.data?.data || usersResponse.data || usersResponse;
 
-      console.log('Reports from API:', reportsData);
-      console.log('Sample report structure:', reportsData[0]);
-      console.log('Users from API:', usersData);
+      // Si es un objeto con una propiedad que contiene el array, extraerlo
+      if (reportsData && typeof reportsData === 'object' && !Array.isArray(reportsData)) {
+        const possibleArrayKeys = ['reports', 'items', 'results', 'list'];
+        for (const key of possibleArrayKeys) {
+          if (Array.isArray(reportsData[key])) {
+            reportsData = reportsData[key];
+            break;
+          }
+        }
+      }
 
-      setReports(Array.isArray(reportsData) ? reportsData : []);
-      setUsers(Array.isArray(usersData) ? usersData : []);
+      if (usersData && typeof usersData === 'object' && !Array.isArray(usersData)) {
+        const possibleArrayKeys = ['users', 'items', 'results', 'list'];
+        for (const key of possibleArrayKeys) {
+          if (Array.isArray(usersData[key])) {
+            usersData = usersData[key];
+            break;
+          }
+        }
+      }
+
+      console.log('✅ Data loaded:', {
+        reports: reportsData?.length || 0,
+        users: usersData?.length || 0
+      });
+      
+      if (reportsData && reportsData.length > 0) {
+        console.log('📝 Sample report (full object):', reportsData[0]);
+        console.log('📝 Report keys:', Object.keys(reportsData[0]));
+      }
+      
+      if (usersData && usersData.length > 0) {
+        console.log('👤 Sample user:', usersData[0]);
+      }
+
+      const finalReports = Array.isArray(reportsData) ? reportsData : [];
+      const finalUsers = Array.isArray(usersData) ? usersData : [];
+
+      setReports(finalReports);
+      setUsers(finalUsers);
       
       // Calcular estadísticas
-      calculateStats(reportsData, usersData);
+      calculateStats(finalReports, finalUsers);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("❌ Error fetching data:", error);
+      console.error("Error details:", error.response?.data);
       
       // Si falla la API, usar datos mock
       toast.info("Usando datos de demostración");
@@ -311,19 +364,91 @@ const DashboardPage = () => {
   };
 
   const calculateStats = (reportsData, usersData) => {
-    const lostCount = reportsData.filter(r => r.type === "lost").length;
-    const foundCount = reportsData.filter(r => r.type === "found").length;
-    const resolvedCount = reportsData.filter(r => r.status === "resolved" || r.status === "closed").length;
-    const activeCount = reportsData.filter(r => r.status === "active" || r.status === "open").length;
-    const activeUsersCount = usersData.filter(u => u.status === "active").length;
+    // Asegurar que reportsData y usersData sean arrays
+    const reports = Array.isArray(reportsData) ? reportsData : [];
+    const users = Array.isArray(usersData) ? usersData : [];
+    
+    console.log('📊 Calculating stats for', reports.length, 'reports');
+    
+    // Mostrar TODOS los reportes con sus tipos
+    console.log('📋 All reports:', reports.map(r => ({ 
+      id: r.id, 
+      type: r.type,
+      reportStatus: r.reportStatus 
+    })));
+    
+    // Mostrar todos los valores únicos de type y reportStatus
+    const uniqueTypes = [...new Set(reports.map(r => r.type))];
+    const uniqueStatuses = [...new Set(reports.map(r => r.reportStatus))];
+    
+    console.log('Unique types found:', uniqueTypes);
+    console.log('Unique reportStatus found:', uniqueStatuses);
+    
+    // Normalizar valores a minúsculas para comparación
+    const lostCount = reports.filter(r => {
+      const type = String(r.type || "").toLowerCase();
+      return type === "lost" || type === "perdido";
+    }).length;
+    
+    const foundCount = reports.filter(r => {
+      const type = String(r.type || "").toLowerCase();
+      return type === "found" || type === "encontrado";
+    }).length;
+    
+    console.log('🔍 Type analysis:', {
+      lostCount,
+      foundCount,
+      totalReports: reports.length
+    });
+    
+    // Usar reportStatus en lugar de status
+    const resolvedCount = reports.filter(r => {
+      const status = String(r.reportStatus || "").toLowerCase();
+      return status === "resolved" || status === "closed";
+    }).length;
+    
+    const viewedCount = reports.filter(r => {
+      const status = String(r.reportStatus || "").toLowerCase();
+      // La API usa "in_process" con guion bajo, no "in_progress"
+      return status === "viewed" || status === "in_process" || status === "in progress" || status === "in_progress";
+    }).length;
+    
+    const activeCount = reports.filter(r => {
+      const status = String(r.reportStatus || "").toLowerCase();
+      return status === "active" || status === "open" || status === "";
+    }).length;
+    
+    const activeUsersCount = users.filter(u => u.status === "active" || !u.status).length;
+    
+    console.log('📊 Stats:', {
+      total: reports.length,
+      lost: lostCount,
+      found: foundCount,
+      resolved: resolvedCount,
+      viewed: viewedCount,
+      active: activeCount,
+      users: users.length
+    });
+    
+    // Advertencias si los contadores están en 0
+    if (foundCount === 0 && reports.length > 0) {
+      console.warn('⚠️ Found count is 0. Report types:', reports.map(r => ({ id: r.id, type: r.type })));
+    }
+    if (resolvedCount === 0 && reports.length > 0) {
+      console.warn('⚠️ Resolved count is 0. Report statuses:', reports.map(r => ({ id: r.id, reportStatus: r.reportStatus })));
+    }
+    if (viewedCount === 0 && reports.length > 0) {
+      console.warn('⚠️ Viewed count is 0. Report statuses:', reports.map(r => ({ id: r.id, reportStatus: r.reportStatus })));
+    }
     
     setStats({
-      total_reports: reportsData.length,
+      total_reports: reports.length,
       lost_pets: lostCount,
       found_pets: foundCount,
       resolved: resolvedCount,
       active: activeCount,
-      total_users: usersData.length,
+      viewed: viewedCount,
+      total_users: users.length,
       active_users: activeUsersCount
     });
   };
@@ -505,9 +630,13 @@ const DashboardPage = () => {
       if (formData.contactEmail && formData.contactEmail.trim()) submitData.contactEmail = String(formData.contactEmail);
       
       console.log('Updating data:', submitData);
+      console.log('Report type being sent:', submitData.type);
       
       const response = await reportsAPI.update(selectedReport.id, submitData);
       const updatedReport = response.data.data || response.data;
+      
+      console.log('Updated report received from API:', updatedReport);
+      console.log('Updated report type:', updatedReport.type);
 
       if (selectedImage && selectedReport?.id) {
         try {
@@ -589,14 +718,11 @@ const DashboardPage = () => {
 
       console.log('Closing report with ID:', selectedReport.id);
       
-      // Enviar solo el status en el body
-      const updateData = { 
-        status: "resolved" 
-      };
+      // Usar el endpoint correcto: PATCH /api/report/status?id={id}
+      const response = await api.patch(`/report/status?id=${selectedReport.id}`, {
+        reportStatus: "resolved"
+      });
       
-      console.log('Sending update data:', updateData);
-      
-      const response = await reportsAPI.update(selectedReport.id, updateData);
       const updatedReport = response.data.data || response.data;
       
       console.log('Update response:', updatedReport);
@@ -615,12 +741,54 @@ const DashboardPage = () => {
     } catch (error) {
       console.error("Error closing report:", error);
       console.error("Error response:", error.response?.data);
-      console.error("Request config:", error.config);
-      console.error("Request URL:", error.config?.url);
       
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
-                          "Error al cerrar el reporte. Verifica que el endpoint PATCH /report esté disponible.";
+                          "Error al cerrar el reporte.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleMarkViewed = async () => {
+    try {
+      // Verificar permisos
+      if (!user || selectedReport.userId !== user.id) {
+        toast.error("Solo puedes marcar como visto tus propios reportes");
+        setIsMarkViewedOpen(false);
+        setSelectedReport(null);
+        return;
+      }
+
+      console.log('Marking report as viewed with ID:', selectedReport.id);
+      
+      // Usar el endpoint: PATCH /api/report/status?id={id}
+      // La API usa "in_process" como valor de estado
+      const response = await api.patch(`/report/status?id=${selectedReport.id}`, {
+        reportStatus: "in_process"
+      });
+      
+      const updatedReport = response.data.data || response.data;
+      
+      console.log('Update response:', updatedReport);
+      
+      const updatedReports = reports.map(r => 
+        r.id === selectedReport.id ? updatedReport : r
+      );
+      
+      setReports(updatedReports);
+      toast.success("Reporte marcado como visto");
+      setIsMarkViewedOpen(false);
+      setSelectedReport(null);
+      
+      // Refrescar datos
+      fetchData();
+    } catch (error) {
+      console.error("Error marking report as viewed:", error);
+      console.error("Error response:", error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          "Error al marcar el reporte como visto.";
       toast.error(errorMessage);
     }
   };
@@ -629,12 +797,13 @@ const DashboardPage = () => {
     try {
       const newStatus = selectedUser.status === "blocked" ? "active" : "blocked";
       
-      // Si estamos bloqueando, usar el endpoint de soft delete
-      // Si estamos desbloqueando, usar el endpoint de restore
+      // Usar el endpoint correcto según la documentación de la API
       if (newStatus === "blocked") {
-        await usersAPI.deleteById(selectedUser.id);
+        // POST /api/user/{id}/block - Bloquear usuario
+        await api.post(`/user/${selectedUser.id}/block`);
       } else {
-        await usersAPI.restoreUser(selectedUser.id);
+        // DELETE /api/user/{id}/block - Desbloquear usuario
+        await api.delete(`/user/${selectedUser.id}/block`);
       }
       
       const updatedUsers = users.map(u => 
@@ -642,7 +811,7 @@ const DashboardPage = () => {
       );
       
       setUsers(updatedUsers);
-      toast.success(newStatus === "blocked" ? "Usuario bloqueado" : "Usuario desbloqueado");
+      toast.success(newStatus === "blocked" ? "Usuario bloqueado exitosamente" : "Usuario desbloqueado exitosamente");
       setIsBlockUserOpen(false);
       setSelectedUser(null);
       
@@ -655,13 +824,20 @@ const DashboardPage = () => {
   };
 
   const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    // Confirmar eliminación
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar al usuario ${selectedUser.fullName || selectedUser.name}? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    
     try {
+      // DELETE /api/user/{id} - Soft delete
       await usersAPI.deleteById(selectedUser.id);
       
       const updatedUsers = users.filter(u => u.id !== selectedUser.id);
       setUsers(updatedUsers);
       toast.success("Usuario eliminado exitosamente");
-      setIsBlockUserOpen(false);
       setSelectedUser(null);
       
       // Refrescar datos
@@ -717,8 +893,9 @@ const DashboardPage = () => {
     const description = report.description || "";
     const city = report.city || "";
     const breed = report.breed || "";
-    const reportType = report.type || "";
+    const reportType = String(report.type || "").toLowerCase();
     const petType = report.petType || "";
+    const reportStatus = String(report.reportStatus || "").toLowerCase();
     
     const matchesSearch = 
       description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -726,8 +903,21 @@ const DashboardPage = () => {
       breed.toLowerCase().includes(searchTerm.toLowerCase()) ||
       petType.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = filterType === "all" || reportType === filterType;
-    const matchesStatus = filterStatus === "all" || report.status === filterStatus;
+    const matchesType = filterType === "all" || reportType === filterType.toLowerCase();
+    
+    let matchesStatus = true;
+    if (filterStatus !== "all") {
+      const filterLower = filterStatus.toLowerCase();
+      if (filterLower === "viewed") {
+        matchesStatus = reportStatus === "viewed" || reportStatus === "in_process" || reportStatus === "in progress" || reportStatus === "in_progress";
+      } else if (filterLower === "resolved") {
+        matchesStatus = reportStatus === "resolved" || reportStatus === "closed";
+      } else if (filterLower === "active") {
+        matchesStatus = reportStatus === "active" || reportStatus === "open" || reportStatus === "";
+      } else {
+        matchesStatus = reportStatus === filterLower;
+      }
+    }
     
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -736,19 +926,30 @@ const DashboardPage = () => {
     const matchesSearch = 
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+      user.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === "all" || user.status === filterStatus;
-    const matchesType = user.type === userSubTab;
+    
+    // Mostrar todos los usuarios en el tab "general"
+    const matchesType = userSubTab === "general";
     
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const getStatusBadge = (status) => {
-    switch (status) {
+  const getStatusBadge = (reportStatus) => {
+    const normalizedStatus = String(reportStatus || "").toLowerCase();
+    switch (normalizedStatus) {
       case "resolved":
+      case "closed":
         return <Badge className="badge-resolved"><CheckCircle className="w-3 h-3 mr-1" />Resuelto</Badge>;
+      case "viewed":
+      case "in_process":
+      case "in_progress":
+      case "in progress":
+        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200"><Clock className="w-3 h-3 mr-1" />Visto</Badge>;
       case "active":
+      case "open":
         return <Badge className="badge-active"><Clock className="w-3 h-3 mr-1" />Activo</Badge>;
       default:
         return <Badge className="badge-active"><Clock className="w-3 h-3 mr-1" />Activo</Badge>;
@@ -756,7 +957,8 @@ const DashboardPage = () => {
   };
 
   const getTypeBadge = (type) => {
-    return type === "lost" 
+    const normalizedType = String(type || "").toLowerCase();
+    return normalizedType === "lost" 
       ? <Badge className="badge-lost"><AlertTriangle className="w-3 h-3 mr-1" />Perdido</Badge>
       : <Badge className="badge-found"><CheckCircle className="w-3 h-3 mr-1" />Encontrado</Badge>;
   };
@@ -868,7 +1070,7 @@ const DashboardPage = () => {
 
         <div className="p-4 sm:p-6 lg:p-8 space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <Card className="stats-card rounded-xl animate-fade-in stagger-1" data-testid="stats-total">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -901,27 +1103,27 @@ const DashboardPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="stats-card rounded-xl animate-fade-in stagger-3" data-testid="stats-found">
+            <Card className="stats-card rounded-xl animate-fade-in stagger-4" data-testid="stats-viewed">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">Encontrados</p>
-                    <p className="text-3xl font-bold text-[#16A99F]">
-                      <AnimatedCounter value={stats.found_pets} />
+                    <p className="text-sm text-gray-500">Vistos</p>
+                    <p className="text-3xl font-bold text-yellow-500">
+                      <AnimatedCounter value={stats.viewed} />
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-[#16A99F]/10 flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-[#16A99F]" />
+                  <div className="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-yellow-500" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="stats-card rounded-xl animate-fade-in stagger-4" data-testid="stats-resolved">
+            <Card className="stats-card rounded-xl animate-fade-in stagger-5" data-testid="stats-resolved">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">Resueltos</p>
+                    <p className="text-sm text-gray-500">Encontrados</p>
                     <p className="text-3xl font-bold text-green-500">
                       <AnimatedCounter value={stats.resolved} />
                     </p>
@@ -933,7 +1135,7 @@ const DashboardPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="stats-card rounded-xl animate-fade-in stagger-5" data-testid="stats-users">
+            <Card className="stats-card rounded-xl animate-fade-in stagger-6" data-testid="stats-users">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -988,7 +1190,12 @@ const DashboardPage = () => {
                       <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>
                         <SelectItem value="active">Activos</SelectItem>
-                        {activeTab === "reports" && <SelectItem value="resolved">Resueltos</SelectItem>}
+                        {activeTab === "reports" && (
+                          <>
+                            <SelectItem value="viewed">Vistos</SelectItem>
+                            <SelectItem value="resolved">Resueltos</SelectItem>
+                          </>
+                        )}
                         {activeTab === "users" && <SelectItem value="blocked">Bloqueados</SelectItem>}
                       </SelectContent>
                     </Select>
@@ -1058,19 +1265,29 @@ const DashboardPage = () => {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                                  {report.photos && report.photos.length > 0 ? (
-                                    <img 
-                                      src={report.photos[0].url} 
-                                      alt="" 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                  ) : (
-                                    <img 
-                                      src={perdidogLogo} 
-                                      alt="Mascota" 
-                                      className="w-6 h-6 object-contain opacity-40"
-                                    />
-                                  )}
+                                  {(() => {
+                                    const imageUrl = getReportImageUrl(report);
+                                    
+                                    return imageUrl ? (
+                                      <img 
+                                        src={imageUrl} 
+                                        alt="Mascota" 
+                                        className="w-full h-full object-cover" 
+                                        onError={(e) => {
+                                          console.error(`❌ Image load error for report ${report.id}`);
+                                          e.target.onerror = null;
+                                          e.target.src = perdidogLogo;
+                                          e.target.className = "w-6 h-6 object-contain opacity-40";
+                                        }}
+                                      />
+                                    ) : (
+                                      <img 
+                                        src={perdidogLogo} 
+                                        alt="Mascota" 
+                                        className="w-6 h-6 object-contain opacity-40"
+                                      />
+                                    );
+                                  })()}
                                 </div>
                                 <div>
                                   <p className="font-medium text-gray-900">
@@ -1139,7 +1356,7 @@ const DashboardPage = () => {
                                 }) : "-"}
                               </div>
                             </TableCell>
-                            <TableCell>{getStatusBadge(report.status)}</TableCell>
+                            <TableCell>{getStatusBadge(report.reportStatus)}</TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -1150,7 +1367,19 @@ const DashboardPage = () => {
                                 <DropdownMenuContent align="end">
                                   {user && report.userId === user.id ? (
                                     <>
-                                      {report.status === "active" && (
+                                      {(report.reportStatus === "active" || !report.reportStatus) && (
+                                        <>
+                                          <DropdownMenuItem onClick={() => { setSelectedReport(report); setIsMarkViewedOpen(true); }} className="text-yellow-600">
+                                            <Clock className="w-4 h-4 mr-2" />
+                                            Marcar como Visto
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => { setSelectedReport(report); setIsCloseReportOpen(true); }} className="text-green-600">
+                                            <CheckCircle className="w-4 h-4 mr-2" />
+                                            Cerrar Reporte
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                      {report.reportStatus === "viewed" && (
                                         <DropdownMenuItem onClick={() => { setSelectedReport(report); setIsCloseReportOpen(true); }} className="text-green-600">
                                           <CheckCircle className="w-4 h-4 mr-2" />
                                           Cerrar Reporte
@@ -1197,10 +1426,7 @@ const DashboardPage = () => {
                           <TableHead>Usuario</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Teléfono</TableHead>
-                          {userSubTab === "reported" && <TableHead>Motivo de Reporte</TableHead>}
-                          {userSubTab === "reported" && <TableHead>Reportado Por</TableHead>}
                           <TableHead>Reportes</TableHead>
-                          <TableHead>Fecha {userSubTab === "reported" ? "Reporte" : "Registro"}</TableHead>
                           <TableHead>Estado</TableHead>
                           <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -1211,50 +1437,33 @@ const DashboardPage = () => {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-[#015388] flex items-center justify-center text-white font-semibold">
-                                  {user.name.charAt(0).toUpperCase()}
+                                  {(user.fullName || user.name || "U").charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-gray-900">{user.name}</p>
+                                  <p className="font-medium text-gray-900">{user.fullName || user.name || "Usuario"}</p>
+                                  <p className="text-xs text-gray-500">ID: {user.id}</p>
                                 </div>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1 text-sm text-gray-600">
                                 <Mail className="w-4 h-4" />
-                                {user.email}
+                                {user.email || "-"}
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1 text-sm text-gray-600">
                                 <Phone className="w-4 h-4" />
-                                {user.phone}
+                                {user.phoneNumber || user.phone || "-"}
                               </div>
                             </TableCell>
-                            {userSubTab === "reported" && (
-                              <TableCell>
-                                <div className="max-w-xs">
-                                  <p className="text-sm text-gray-700 line-clamp-2">{user.report_reason}</p>
-                                </div>
-                              </TableCell>
-                            )}
-                            {userSubTab === "reported" && (
-                              <TableCell>
-                                <p className="text-sm text-gray-600">{user.reported_by}</p>
-                              </TableCell>
-                            )}
                             <TableCell>
                               <Badge className="bg-[#015388]/10 text-[#015388]">
-                                {user.reports_count} reportes
+                                {user.rescueCount || user.reports_count || 0} reportes
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <Calendar className="w-4 h-4" />
-                                {new Date(userSubTab === "reported" ? user.reported_date : user.registered_date).toLocaleDateString()}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {user.status === "active" ? (
+                              {user.status === "active" || !user.status ? (
                                 <Badge className="badge-active">
                                   <CheckCircle className="w-3 h-3 mr-1" />
                                   Activo
@@ -1294,7 +1503,7 @@ const DashboardPage = () => {
                                     onClick={() => { setSelectedUser(user); handleDeleteUser(); }}
                                     className="text-red-600"
                                   >
-                                    <UserX className="w-4 h-4 mr-2" />
+                                    <Trash2 className="w-4 h-4 mr-2" />
                                     Eliminar
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -1535,6 +1744,7 @@ const DashboardPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Activo</SelectItem>
+                    <SelectItem value="viewed">Visto</SelectItem>
                     <SelectItem value="resolved">Resuelto</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1603,6 +1813,30 @@ const DashboardPage = () => {
               data-testid="confirm-close-btn"
             >
               Sí, Cerrar Reporte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark as Viewed Confirmation */}
+      <Dialog open={isMarkViewedOpen} onOpenChange={setIsMarkViewedOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-yellow-600">Marcar como Visto</DialogTitle>
+            <DialogDescription>
+              ¿Deseas marcar este reporte como visto? Esto indica que estás trabajando en el caso.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsMarkViewedOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              onClick={handleMarkViewed}
+              data-testid="confirm-viewed-btn"
+            >
+              Marcar como Visto
             </Button>
           </DialogFooter>
         </DialogContent>
