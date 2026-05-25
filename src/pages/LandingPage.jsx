@@ -151,8 +151,7 @@ const LandingPage = () => {
   const stats = [
     { value: 15, suffix: "K+", label: "Mascotas Reunidas" },
     { value: 50, suffix: "K+", label: "Usuarios Activos" },
-    { value: 100, suffix: "+", label: "Ciudades" },
-    { value: 98, suffix: "%", label: "Satisfacción" }
+    { value: 100, suffix: "+", label: "Ciudades" }
   ];
 
   return (
@@ -342,17 +341,23 @@ const LandingPage = () => {
                 <Button 
                   size="lg" 
                   className="bg-[#015388] hover:bg-[#016dad] text-white rounded-full px-8 h-14 transition-all hover:scale-105"
+                  asChild
                 >
-                  <Smartphone className="w-5 h-5 mr-2" />
-                  App Store
+                  <a href="https://apps.apple.com/do/app/perdidog/id6760975782" target="_blank" rel="noopener noreferrer">
+                    <Smartphone className="w-5 h-5 mr-2" />
+                    App Store
+                  </a>
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
                   className="border-2 border-[#015388] text-[#015388] hover:bg-[#015388] hover:text-white rounded-full px-8 h-14 transition-all hover:scale-105"
+                  asChild
                 >
-                  <Smartphone className="w-5 h-5 mr-2" />
-                  Google Play
+                  <a href="https://play.google.com/store/apps/details?id=com.perdidog&pcampaignid=web_share" target="_blank" rel="noopener noreferrer">
+                    <Smartphone className="w-5 h-5 mr-2" />
+                    Google Play
+                  </a>
                 </Button>
               </div>
             </div>
@@ -391,9 +396,12 @@ const LandingPage = () => {
               size="lg" 
               className="bg-white text-[#015388] hover:bg-gray-100 rounded-full px-10 h-14 text-base font-semibold transition-all hover:scale-110"
               data-testid="cta-download-btn"
+              asChild
             >
-              Descargar Ahora
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <a href="https://apps.apple.com/do/app/perdidog/id6760975782" target="_blank" rel="noopener noreferrer">
+                Descargar Ahora
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </a>
             </Button>
           </div>
         </div>
